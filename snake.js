@@ -63,18 +63,20 @@ HipsterSnake.Snake.prototype.refreshTail = function () {
         var angle = new_tail_start.getAngleToLast();  
         var need_len = this.len - (len - new_tail_start.lenToLast());
 
-        var new_x = new_tail_start.x + (Math.cos(angle) * need_len);
-        var new_y = new_tail_start.y + (Math.sin(angle) * need_len);
+        var new_x = new_tail_start.x - (Math.sin(angle) * need_len);
+        var new_y = new_tail_start.y - (Math.cos(angle) * need_len);
         var new_tail_end = new HipsterSnake.Pos(new_x, new_y, null);
         new_tail_start.last = new_tail_end;
         new_poses.push(new_tail_start);
         new_poses.push(new_tail_end);
 
+ this.poses = new_poses.reverse();
+        break;
       }
 
     }
   }
-  this.poses = new_poses.reverse();
+ 
 
 };
 
