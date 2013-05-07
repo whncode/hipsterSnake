@@ -1,15 +1,17 @@
 var HipsterSnake = {
-  Snake : function (name, x, y){
+  Snake : function (name, x, y, board){
     this.poses = [];
     this.poses.push(new HipsterSnake.Pos(x,y,null)); 
     this.breakMe(x, y);
-    this.len = 200;
+    this.len = 100;
     this.name = name;
     this.angle = 4;
     this.color = '#ff0000';
+    this.board = board;
   },
   Board : function(ctx){
     this.snakes = [];
+    this.fruits = [];
     this.ctx = ctx; 
   },
 
@@ -18,6 +20,12 @@ var HipsterSnake = {
     this.y = y;
     this.last = last;
   },
+
+  Fruit : function(x, y, val){
+    this.x = x;
+    this.y = y;
+    this.val = val;
+  }
 };
 
 HipsterSnake.Snake.prototype.breakMe = function(x, y) {
@@ -69,16 +77,18 @@ HipsterSnake.Snake.prototype.refreshTail = function () {
         new_tail_start.last = new_tail_end;
         new_poses.push(new_tail_start);
         new_poses.push(new_tail_end);
-
- this.poses = new_poses.reverse();
+        this.poses = new_poses.reverse();
         break;
       }
-
     }
   }
- 
-
 };
+
+HipsterSnake.Snake.eat = function(fruit){
+    this.len+=fruit.val;
+    this.fruit.destroy();
+    this.board.newFruit();
+}
 
 HipsterSnake.Pos.prototype.lenToLast = function() {
   var dx = Math.abs(this.x - this.last.x);
@@ -94,90 +104,44 @@ HipsterSnake.Pos.prototype.getAngleToLast = function(pos){
 
 HipsterSnake.Board.prototype.newSnake = function(name){
   var snake = HipsterSnake.Snake;
-  this.snakes.push(new snake(name,100,100));
-};
-
-HipsterSnake.Board.prototype.drawAll = function(){
-  this.drawBackground();
-  this.snakes.forEach(this.drawSnake);
-};
-
-HipsterSnake.Board.prototype.drawBackground = function(){
-  this.ctx.fillStyle = "#fef";
-  this.ctx.fillRect(0,0,500, 500);
+  this.snakes.push(new snake(name,100,100, this));
 };
 
 HipsterSnake.Board.prototype.moveAll = function(){
-  this.snakes.forEach(function(snake){
-    snake.move(1);
+    this.snakes.forEach(function(snake){
+    var place = snake.move(1);
+    //this.checkCollision(place);
+
   }); 
 }
 
-HipsterSnake.Board.prototype.drawSnake = function (snake){
-  
-  this.ctx.beginPath();
-  this.ctx.closePath();
-  //this.ctx.lineCap = "round";
-  this.ctx.lineWidth = 3;
-  this.ctx.strokeStyle = "#000000";
-  this.ctx.arc(snake.getHead().x, snake.getHead().y, 10, snake.angle + Math.PI, Math.PI*2 + snake.angle, false); 
-  //draw tail
-  ctx.beginPath();
-  ctx.closePath();
-  this.ctx.font =  '12px Monospace' ; 
 
-  this.ctx.fillStyle = "#000000";
-  this.ctx.fillText(snake.len, snake.getHead().x, snake.getHead().y);
-  
-    this.ctx.beginPath();
-  this.ctx.closePath();
+HipsterSnake.Board.prototype.checkCollision = function(snake){
+    //with snakes
+    var x = snake.getHead().x;
+    var y = snake.getHead().y;
+    var in_x = false;
+    var in_y = false;
+    this.snakes.foreach(function(c_snake){
+        c_snake.poses.foreach(function(pos){
+            if(pos.x <= pos.last.x){
+                in_x = (pos.x < x < pos.last.x);
+            } else {
+                in_x = (pos.last.x < x < pos.x); 
+            }
 
-  this.ctx.moveTo(snake.getHead().x, snake.getHead().y);
-  this.ctx.strokeStyle = snake.color; 
-  this.ctx.lineWidth = 4;
-  for(var i = snake.poses.length - 1; i >= 0; i--){
-    ctx.lineTo(snake.poses[i].x, snake.poses[i].y); 
-  }
-  ctx.stroke();
-}; 
+            if(pos.y <= pos.last.y){
+                in_y = (pos.y < y < pos.last.y);
+            } else {
+                in_y = (pos.last.y < y < pos.y); 
+            }
 
-
-var canvas = document.getElementById('drawSpace');
-var ctx = canvas.getContext('2d');
-
-board1 = new HipsterSnake.Board(ctx);
-board1.newSnake('STEFAN');
-board1.drawAll();
-
-
-
-//everyhing bottom to refactor
-//only for testing existing code
-canvas.onclick = function (event){
-  var x, y;
-
-  x = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - Math.floor(canvas.offsetLeft);
-  y = event.clientY + document.body.scrollTop + document.documentElement.scrollTop - Math.floor(canvas.offsetTop) + 1;
-
-  board1.snakes[0].look(x,y);
+            if(in_x && in_y){
+                var a = (pos.x - pos.last.x) / (pos.y - pos.last.y);
+            } else {
+                return false;
+            }
+        });
+    });
 }
 
-window.requestAnimFrame = (function(callback) {
-  return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
-  function(callback) {
-    window.setTimeout(callback, 1000 / 60);
-  };
-})();
-
-
-
-
-function animate() {
-  board1.moveAll();  
-  board1.drawAll();
-  // request new frame
-  requestAnimFrame(function() {
-    animate();
-  });
-}
-animate();
